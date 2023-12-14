@@ -32,6 +32,6 @@ func main() {
 			pos = append(pos, i+1)
 		}
 	}
-	fmt.Println(floor)
-	fmt.Println(pos[0])
+	fmt.Println("part1:", floor)
+	fmt.Println("part2:", pos[0])
 }
