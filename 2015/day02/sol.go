@@ -1,62 +1,24 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"os"
+	"regexp"
 	"strconv"
-	"strings"
 )
 
 func main() {
+	input, _ := os.ReadFile("input")
+	re := regexp.MustCompile(`(.+)x(.+)x(.+)`)
 	paper, ribbon := 0, 0
-
-	file, err := os.Open("input")
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+	for _, match := range re.FindAllStringSubmatch(string(input), -1) {
+		l, _ := strconv.Atoi(match[1])
+		w, _ := strconv.Atoi(match[2])
+		h, _ := strconv.Atoi(match[3])
+		a, b, c := l*w, w*h, h*l
+		paper += 2*(a+b+c) + min(a, b, c)
+		ribbon += 2*min(l+w, w+h, h+l) + l*w*h
 	}
-	defer file.Close()
-	var buf bytes.Buffer
-	io.Copy(&buf, file)
-	for _, line := range strings.Split(buf.String(), "\n") {
-		dim := []int{0, 0, 0}
-		for i := range dim {
-			d, err := strconv.Atoi(strings.Split(line, "x")[i])
-			if err != nil {
-				fmt.Fprintln(os.Stderr, err)
-			}
-			dim[i] = d
-		}
-
-		a := dim[0] * dim[1]
-		b := dim[1] * dim[2]
-		c := dim[2] * dim[0]
-		paper += 2*a + 2*b + 2*c + min(a, b, c)
-
-		x := 2 * (dim[0] + dim[1])
-		y := 2 * (dim[1] + dim[2])
-		z := 2 * (dim[2] + dim[0])
-		ribbon += min(x, y, z) + dim[0]*dim[1]*dim[2]
-	}
-
 	fmt.Println("part1:", paper)
 	fmt.Println("part2:", ribbon)
-}
-
-func min(a ...int) int {
-	switch len(a) {
-	case 0:
-		panic("the list cannot be empty")
-	case 1:
-		return a[0]
-	default:
-		x := a[0]
-		y := min(a[1:]...)
-		if x < y {
-			return x
-		}
-		return y
-	}
 }
