@@ -4,21 +4,23 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
-	"strconv"
+	"strings"
 )
 
 func main() {
 	var i int
-	for i = 1; hash("bgvyzdsv", i)[:5] != "00000"; i++ {
+	for !strings.HasPrefix(hash(i), "00000") {
+		i++
 	}
 	fmt.Println("part1:", i)
-	for i = 1; hash("bgvyzdsv", i)[:6] != "000000"; i++ {
+	for !strings.HasPrefix(hash(i), "000000") {
+		i++
 	}
 	fmt.Println("part2:", i)
 }
 
-func hash(s string, i int) string {
-	data := []byte(s + strconv.Itoa(i))
-	hash := md5.Sum(data)
-	return hex.EncodeToString(hash[:])
+func hash(i int) string {
+	h := md5.New()
+	fmt.Fprintf(h, "bgvyzdsv%d", i)
+	return hex.EncodeToString(h.Sum(nil))
 }
