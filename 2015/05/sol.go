@@ -2,76 +2,69 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"strings"
 )
 
 func main() {
-	f, err := os.Open("input")
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-	buf, err := io.ReadAll(f)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-	input := string(buf)
-	part1, part2 := 0, 0
-	for _, name := range strings.Split(input, "\n") {
-		if vowel3(name) && repeat(name) && nobadseq(name) {
-			part1++
+	input, _ := os.ReadFile("input")
+	var nice, nice2 int
+	for _, s := range strings.Split(string(input), "\n") {
+		if vowel(s) && pair(s) && !ugly(s) {
+			nice++
 		}
-		if repeatpair(name) && repeatgap(name) {
-			part2++
+		if doublepair(s) && between(s) {
+			nice2++
 		}
 	}
-	fmt.Println("part1:", part1)
-	fmt.Println("part2:", part2)
+	fmt.Println("part1:", nice)
+	fmt.Println("part2:", nice2)
 }
 
-func vowel3(name string) bool {
-	vc := 0
-	for _, c := range name {
-		if strings.ContainsAny(string(c), "aeiou") {
-			vc++
+func vowel(s string) bool {
+	for range 3 {
+		i := strings.IndexAny(s, "aeiou")
+		if i == -1 {
+			return false
 		}
+		s = s[i+1:]
 	}
-	return vc >= 3
+	return true
 }
-func repeat(name string) bool {
-	for i := 0; i < len(name)-1; i++ {
-		if name[i] == name[i+1] {
+
+func pair(s string) bool {
+	for i := 0; i < len(s)-1; i++ {
+		if s[i] == s[i+1] {
 			return true
 		}
 	}
 	return false
 }
-func nobadseq(name string) bool {
-	for i := 0; i < len(name)-1; i++ {
-		switch name[i : i+2] {
+
+func ugly(s string) bool {
+	for i := 0; i < len(s)-1; i++ {
+		switch s[i : i+2] {
 		case "ab", "cd", "pq", "xy":
-			return false
+			return true
 		}
 	}
-	return true
+	return false
 }
 
-func repeatpair(name string) bool {
-	for i := 0; i < len(name)-2; i++ {
-		for j := i + 2; j < len(name)-1; j++ {
-			if name[i] == name[j] && name[i+1] == name[j+1] {
+func doublepair(s string) bool {
+	for i := 0; i < len(s)-3; i++ {
+		for j := i + 2; j < len(s)-1; j++ {
+			if s[i:i+2] == s[j:j+2] {
 				return true
 			}
 		}
 	}
 	return false
 }
-func repeatgap(name string) bool {
-	for i := 0; i < len(name)-2; i++ {
-		if name[i] == name[i+2] {
+
+func between(s string) bool {
+	for i := 1; i < len(s)-1; i++ {
+		if s[i-1] == s[i+1] {
 			return true
 		}
 	}
