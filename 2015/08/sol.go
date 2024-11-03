@@ -2,57 +2,36 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"strings"
 )
 
 func main() {
-	f, err := os.Open("input")
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-	buf, err := io.ReadAll(f)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-	part1, part2 := 0, 0
-	for _, line := range strings.Split(string(buf), "\n") {
-		dec := 0
-		for i := 0; i < len(line); i++ {
-			switch line[i] {
-			case '"':
-			case '\\':
+	input, _ := os.ReadFile("input")
+	var mem, lit, enc int
+	for _, s := range strings.Split(string(input), "\n") {
+		for i := 1; i < len(s)-1; {
+			switch {
+			case s[i] != '\\':
 				i++
-				switch line[i] {
-				case '\\':
-					dec++
-				case '"':
-					dec++
-				case 'x':
-					dec++
-					i += 2
-				default:
-					panic("unhandled escape character")
-				}
+			case s[i+1] == 'x':
+				i += 4
 			default:
-				dec++
+				i += 2
 			}
+			mem++
 		}
-		enc := 2
-		for _, c := range line {
+		lit += len(s)
+		enc += 2 // ""
+		for _, c := range s {
 			switch c {
 			case '"', '\\':
 				enc += 2
 			default:
-				enc++
+				enc += 1
 			}
 		}
-		part1 += len(line) - dec
-		part2 += enc - len(line)
 	}
-	fmt.Println("part1:", part1)
-	fmt.Println("part2:", part2)
+	fmt.Println("part1:", lit-mem)
+	fmt.Println("part2:", enc-lit)
 }
