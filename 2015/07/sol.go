@@ -2,72 +2,48 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"strconv"
 	"strings"
 )
 
 func main() {
-	f, err := os.Open("input")
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-	buf, err := io.ReadAll(f)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-
-	instr := make(map[string][]string)
-	for _, line := range strings.Split(string(buf), "\n") {
-		fromto := strings.Split(line, " -> ")
-		expr, key := fromto[0], fromto[1]
-		instr[key] = strings.Split(expr, " ")
-	}
+	input, _ := os.ReadFile("input")
+	wire := make(map[string]func() int)
 	cache := make(map[string]int)
-
-	var eval func(key string) int
-	eval = func(key string) int {
-		if val, ok := cache[key]; ok {
-			return val
-		}
-		if n, err := strconv.Atoi(key); err == nil {
-			cache[key] = n
+	value := func(s string) int {
+		if n, err := strconv.Atoi(s); err == nil {
 			return n
 		}
-		out := 0
-		cmd := instr[key]
-		switch len(cmd) {
-		case 1:
-			out = eval(cmd[0])
-		case 2:
-			out = ^eval(cmd[1])
-		case 3:
-			switch cmd[1] {
-			case "AND":
-				out = eval(cmd[0]) & eval(cmd[2])
-			case "OR":
-				out = eval(cmd[0]) | eval(cmd[2])
-			case "LSHIFT":
-				out = eval(cmd[0]) << eval(cmd[2])
-			case "RSHIFT":
-				out = eval(cmd[0]) >> eval(cmd[2])
-			default:
-				panic("unhandled operator")
-			}
-		default:
-			panic("unhandled command")
+		if n, ok := cache[s]; ok {
+			return n
 		}
-		cache[key] = out
-		return out
+		cache[s] = wire[s]()
+		return cache[s]
 	}
-
-	part1 := eval("a")
+	for _, line := range strings.Split(string(input), "\n") {
+		f := strings.Fields(line)
+		switch len(f) {
+		case 3: // x -> y
+			wire[f[2]] = func() int { return value(f[0]) }
+		case 4: // NOT x -> y
+			wire[f[3]] = func() int { return ^value(f[1]) }
+		case 5: // x op y -> z
+			switch f[1] {
+			case "AND":
+				wire[f[4]] = func() int { return value(f[0]) & value(f[2]) }
+			case "OR":
+				wire[f[4]] = func() int { return value(f[0]) | value(f[2]) }
+			case "LSHIFT":
+				wire[f[4]] = func() int { return value(f[0]) << value(f[2]) }
+			case "RSHIFT":
+				wire[f[4]] = func() int { return value(f[0]) >> value(f[2]) }
+			}
+		}
+	}
+	a := wire["a"]()
+	fmt.Println("part1:", a)
+	wire["b"] = func() int { return a }
 	cache = make(map[string]int)
-	cache["b"] = part1
-	part2 := eval("a")
-	fmt.Println("part1:", part1)
-	fmt.Println("part2:", part2)
+	fmt.Println("part2:", wire["a"]())
 }
