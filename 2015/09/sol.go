@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io"
+	"maps"
 	"math"
 	"os"
 	"strconv"
@@ -10,73 +10,37 @@ import (
 )
 
 func main() {
-	f, err := os.Open("input")
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-	buf, err := io.ReadAll(f)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-
-	distance := make(map[string]map[string]int)
-	for _, line := range strings.Split(string(buf), "\n") {
-		f := strings.Split(line, " = ")
-		loc := strings.Split(f[0], " to ")
-		dist, err := strconv.Atoi(f[1])
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
+	input, _ := os.ReadFile("input")
+	dist := make(map[string]map[string]int)
+	for _, line := range strings.Split(string(input), "\n") {
+		f := strings.Split(line, " ")
+		src, dst := f[0], f[2]
+		d, _ := strconv.Atoi(f[4])
+		if _, ok := dist[src]; !ok {
+			dist[src] = make(map[string]int)
 		}
-		if _, ok := distance[loc[0]]; !ok {
-			distance[loc[0]] = make(map[string]int)
+		dist[src][dst] = d
+		if _, ok := dist[dst]; !ok {
+			dist[dst] = make(map[string]int)
 		}
-		if _, ok := distance[loc[1]]; !ok {
-			distance[loc[1]] = make(map[string]int)
-		}
-		distance[loc[0]][loc[1]] = dist
-		distance[loc[1]][loc[0]] = dist
+		dist[dst][src] = d
 	}
-
-	var location []string
-	for key := range distance {
-		location = append(location, key)
-	}
-
-	mindist, maxdist := math.MaxInt, 0
-	for _, p := range permutations(len(location)) {
-		dist := 0
-		for i := 0; i < len(p)-1; i++ {
-			from := location[p[i]]
-			to := location[p[i+1]]
-			dist += distance[from][to]
+	var walk func(string) (int, int)
+	walk = func(u string) (int, int) {
+		if len(dist) == 0 {
+			return 0, 0
 		}
-		if dist < mindist {
-			mindist = dist
+		m, M := math.MaxInt, 0
+		for v, dv := range maps.Clone(dist) {
+			delete(dist, v)
+			d, D := walk(v)
+			m = min(m, dv[u]+d)
+			M = max(M, dv[u]+D)
+			dist[v] = dv
 		}
-		if dist > maxdist {
-			maxdist = dist
-		}
+		return m, M
 	}
-	fmt.Println("part1:", mindist)
-	fmt.Println("part2:", maxdist)
-}
-
-func permutations(n int) [][]int {
-	if n == 1 {
-		return [][]int{{0}}
-	}
-	var out [][]int
-	for _, p := range permutations(n - 1) {
-		for i := 0; i < n; i++ {
-			var q []int
-			q = append(q, p[:i]...)
-			q = append(q, n-1)
-			q = append(q, p[i:]...)
-			out = append(out, q)
-		}
-	}
-	return out
+	d, D := walk("")
+	fmt.Println("part1:", d)
+	fmt.Println("part2:", D)
 }
