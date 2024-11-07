@@ -2,26 +2,32 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
 func main() {
-	s := []string{"1113122113"}
-	for i := 0; i < 50; i++ {
-		var next []string
-		j, count := 1, 1
-		for j < len(s[len(s)-1]) {
-			if s[len(s)-1][j] == s[len(s)-1][j-1] {
-				count++
-			} else {
-				next = append(next, fmt.Sprintf("%d%c", count, s[len(s)-1][j-1]))
-				count = 1
-			}
-			j++
-		}
-		next = append(next, fmt.Sprintf("%d%c", count, s[len(s)-1][j-1]))
-		s = append(s, strings.Join(next, ""))
+	s := "1113122113"
+	for range 40 {
+		s = looksay(s)
 	}
-	fmt.Println("part1:", len(s[40]))
-	fmt.Println("part2:", len(s[50]))
+	fmt.Println("part1:", len(s))
+	for range 10 {
+		s = looksay(s)
+	}
+	fmt.Println("part2:", len(s))
+}
+
+func looksay(s string) string {
+	var sb strings.Builder
+	for len(s) > 0 {
+		n := 1
+		for n < len(s) && s[n] == s[n-1] {
+			n++
+		}
+		sb.WriteString(strconv.Itoa(n))
+		sb.WriteByte(s[0])
+		s = s[n:]
+	}
+	return sb.String()
 }
