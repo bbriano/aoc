@@ -1,9 +1,12 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 func main() {
-	pass := "hepxcrrz"
+	pass := "hepxcrrq"
 	for !valid(pass) {
 		pass = inc(pass)
 	}
@@ -20,8 +23,8 @@ func valid(pass string) bool {
 }
 
 func abc(pass string) bool {
-	for i := 0; i < len(pass)-2; i++ {
-		if pass[i]+1 == pass[i+1] && pass[i+1]+1 == pass[i+2] {
+	for i := 1; i < len(pass)-1; i++ {
+		if pass[i-1]+1 == pass[i] && pass[i] == pass[i+1]-1 {
 			return true
 		}
 	}
@@ -29,44 +32,28 @@ func abc(pass string) bool {
 }
 
 func noIOL(pass string) bool {
-	for _, c := range pass {
-		switch c {
-		case 'i', 'o', 'l':
-			return false
-		}
-	}
-	return true
+	return strings.IndexAny(pass, "iol") == -1
 }
 
 func aabb(pass string) bool {
-	i := 0
-	first := byte('a')
-	for i < len(pass)-1 {
+	pairs := 0
+	for i := 0; i < len(pass)-1; i++ {
 		if pass[i] == pass[i+1] {
-			first = pass[i]
-			break
+			pairs++
+			i++
 		}
-		i++
 	}
-	i += 2
-	for i < len(pass)-1 {
-		if pass[i] == pass[i+1] && pass[i] != first {
-			return true
-		}
-		i++
-	}
-	return false
+	return pairs >= 2
 }
 
 func inc(pass string) string {
-	buf := []byte(pass)
-	for i := len(pass) - 1; i >= 0; i-- {
-		if pass[i] == 'z' {
-			buf[i] = 'a'
-		} else {
-			buf[i]++
+	b := []byte(pass)
+	for i := len(b) - 1; i >= 0; i-- {
+		if b[i] != 'z' {
+			b[i]++
 			break
 		}
+		b[i] = 'a'
 	}
-	return string(buf)
+	return string(b)
 }
