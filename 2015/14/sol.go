@@ -2,89 +2,54 @@ package main
 
 import (
 	"fmt"
-	"io"
-	"math"
 	"os"
-	"regexp"
 	"strconv"
+	"strings"
 )
 
-type reindeer struct {
-	name     string
-	speed    int
-	uptime   int
-	downtime int
-}
-
 func main() {
-	f, err := os.Open("input")
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-	buf, err := io.ReadAll(f)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-
+	type reindeer struct{ speed, uptime, downtime int }
 	var reindeers []reindeer
-	re := regexp.MustCompile("([A-Za-z]+) can fly ([0-9]+) km/s for ([0-9]+) seconds, but then must rest for ([0-9]+) seconds.")
-	for _, match := range re.FindAllStringSubmatch(string(buf), -1) {
+	input, _ := os.ReadFile("input")
+	for _, line := range strings.Split(string(input), "\n") {
+		f := strings.Fields(line)
 		r := reindeer{
-			name:     match[1],
-			speed:    atoi(match[2]),
-			uptime:   atoi(match[3]),
-			downtime: atoi(match[4]),
+			speed:    atoi(f[3]),
+			uptime:   atoi(f[6]),
+			downtime: atoi(f[13]),
 		}
 		reindeers = append(reindeers, r)
 	}
-
 	dist := make([]int, len(reindeers))
 	points := make([]int, len(reindeers))
-	state := make([]int, len(reindeers))
-	for i := 0; i < 2503; i++ {
-		for j, r := range reindeers {
-			if state[j] >= 0 {
-				dist[j] += r.speed
-			}
-			state[j]++
-			if state[j] >= r.uptime {
-				state[j] = -r.downtime
+	for t := range 2503 {
+		for i, r := range reindeers {
+			if t%(r.uptime+r.downtime) < r.uptime {
+				dist[i] += r.speed
 			}
 		}
-		maxdist := 0
+		maxd := max(dist)
 		for i := range dist {
-			if dist[i] > maxdist {
-				maxdist = dist[i]
-			}
-		}
-		for i := range dist {
-			if dist[i] == maxdist {
+			if dist[i] == maxd {
 				points[i]++
 			}
 		}
 	}
-
 	fmt.Println("part1:", max(dist))
 	fmt.Println("part2:", max(points))
 }
 
-func max(a []int) int {
-	out := math.MinInt
-	for _, x := range a {
-		if x > out {
-			out = x
+func max(s []int) int {
+	out := s[0]
+	for i := 1; i < len(s); i++ {
+		if s[i] > out {
+			out = s[i]
 		}
 	}
 	return out
 }
 
 func atoi(s string) int {
-	out, err := strconv.Atoi(s)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-	return out
+	n, _ := strconv.Atoi(s)
+	return n
 }
