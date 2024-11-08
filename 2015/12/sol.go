@@ -3,71 +3,58 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 )
 
 func main() {
-	f, err := os.Open("input")
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-	buf, err := io.ReadAll(f)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-	var root interface{}
-	if err := json.Unmarshal(buf, &root); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-	fmt.Println("part1:", part1(root))
-	fmt.Println("part2:", part2(root))
+	f, _ := os.Open("input")
+	d := json.NewDecoder(f)
+	d.UseNumber()
+	var data any
+	d.Decode(&data)
+	fmt.Println("part1:", part1(data))
+	fmt.Println("part2:", part2(data))
 }
 
-func part1(tree interface{}) int {
+func part1(node any) int {
 	out := 0
-	switch tree := tree.(type) {
-	case []interface{}:
-		for _, sub := range tree {
-			out += part1(sub)
-		}
-	case map[string]interface{}:
-		for _, sub := range tree {
-			out += part1(sub)
-		}
-	case float64:
-		out = int(tree)
+	switch node := node.(type) {
 	case string:
-	default:
-		fmt.Fprintf(os.Stderr, "unhandled type: %T\n", tree)
-		os.Exit(1)
+	case json.Number:
+		n, _ := node.Int64()
+		out += int(n)
+	case []any:
+		for _, v := range node {
+			out += part1(v)
+		}
+	case map[string]any:
+		for _, v := range node {
+			out += part1(v)
+		}
 	}
 	return out
 }
 
-func part2(tree interface{}) int {
+func part2(node any) int {
 	out := 0
-	switch tree := tree.(type) {
-	case []interface{}:
-		for _, sub := range tree {
-			out += part2(sub)
+	switch node := node.(type) {
+	case string:
+	case json.Number:
+		n, _ := node.Int64()
+		out += int(n)
+	case []any:
+		for _, v := range node {
+			out += part2(v)
 		}
-	case map[string]interface{}:
-		for _, sub := range tree {
-			if s, ok := sub.(string); ok && s == "red" {
+	case map[string]any:
+		for _, v := range node {
+			if v == "red" {
 				return 0
 			}
-			out += part2(sub)
 		}
-	case float64:
-		out = int(tree)
-	case string:
-	default:
-		fmt.Fprintf(os.Stderr, "unhandled type: %T\n", tree)
-		os.Exit(1)
+		for _, v := range node {
+			out += part2(v)
+		}
 	}
 	return out
 }
