@@ -2,66 +2,50 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"math"
 	"os"
-	"regexp"
 	"strconv"
+	"strings"
 )
 
 func main() {
-	f, err := os.Open("input")
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-	buf, err := io.ReadAll(f)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-
+	input, _ := os.ReadFile("input")
 	happiness := make(map[string]map[string]int)
-	re := regexp.MustCompile("([A-Za-z]+) would (gain|lose) ([0-9]+) happiness units by sitting next to ([A-Za-z]+)\\.")
-	for _, f := range re.FindAllStringSubmatch(string(buf), -1) {
-		n, err := strconv.Atoi(f[3])
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
-		}
+	for _, line := range strings.Split(string(input), "\n") {
+		f := strings.Fields(line)
+		u := f[0]
+		v, _ := strings.CutSuffix(f[10], ".")
+		h, _ := strconv.Atoi(f[3])
 		if f[2] == "lose" {
-			n = -n
+			h = -h
 		}
-		if happiness[f[1]] == nil {
-			happiness[f[1]] = make(map[string]int)
+		if _, ok := happiness[u]; !ok {
+			happiness[u] = make(map[string]int)
 		}
-		happiness[f[1]][f[4]] = n
+		happiness[u][v] = h
 	}
-
 	fmt.Println("part1:", maxHappy(happiness))
-	happiness["$"] = nil
+	happiness["me"] = nil
 	fmt.Println("part2:", maxHappy(happiness))
 }
 
 func maxHappy(happiness map[string]map[string]int) int {
 	var people []string
-	for person := range happiness {
-		people = append(people, person)
+	for u := range happiness {
+		people = append(people, u)
 	}
-	maxhappy := math.MinInt
+	maxh := math.MinInt
 	for _, p := range permutations(len(people)) {
-		happy := 0
-		for i := range p {
-			first := people[p[i]]
-			second := people[p[(i+1)%len(p)]]
-			happy += happiness[first][second]
-			happy += happiness[second][first]
+		h := 0
+		for i := range len(p) {
+			u := people[p[i]]
+			v := people[p[(i+1)%len(p)]]
+			h += happiness[u][v]
+			h += happiness[v][u]
 		}
-		if happy > maxhappy {
-			maxhappy = happy
-		}
+		maxh = max(maxh, h)
 	}
-	return maxhappy
+	return maxh
 }
 
 func permutations(n int) [][]int {
@@ -70,7 +54,7 @@ func permutations(n int) [][]int {
 	}
 	var out [][]int
 	for _, p := range permutations(n - 1) {
-		for i := 0; i < n; i++ {
+		for i := range n {
 			var q []int
 			q = append(q, p[:i]...)
 			q = append(q, n-1)
