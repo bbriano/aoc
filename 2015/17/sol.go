@@ -2,61 +2,42 @@ package main
 
 import (
 	"fmt"
-	"io"
-	"math"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 )
 
 func main() {
-	f, err := os.Open("input")
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+	input, _ := os.ReadFile("input")
+	var capacity []int
+	for _, line := range strings.Split(string(input), "\n") {
+		n, _ := strconv.Atoi(line)
+		capacity = append(capacity, n)
 	}
-	buf, err := io.ReadAll(f)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-	var containers []int
-	for _, line := range strings.Split(string(buf), "\n") {
-		n, err := strconv.Atoi(line)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
+	count := make([]int, len(capacity)+1)
+	for i := range 1 << len(capacity) {
+		space := 0
+		ncontainer := 0
+		for j := range capacity {
+			if i&(1<<j) != 0 {
+				space += capacity[j]
+				ncontainer++
+			}
 		}
-		containers = append(containers, n)
-	}
-	count := make(map[int]int)
-	for i := 0; i < 1<<len(containers); i++ {
-		sum := 0
-		for j := range containers {
-			sum += containers[j] * (i >> j & 1)
-		}
-		if sum == 150 {
-			count[popcount(i)]++
+		if space == 150 {
+			count[ncontainer]++
 		}
 	}
-	part1, part2 := 0, 0
-	minnc := math.MaxInt
-	for nc := range count {
-		part1 += count[nc]
-		if nc < minnc {
-			minnc = nc
-			part2 = count[nc]
-		}
-	}
-	fmt.Println("part1:", part1)
-	fmt.Println("part2:", part2)
+	fmt.Println("part1:", sum(count))
+	least := slices.IndexFunc(count, func(x int) bool { return x >= 1 })
+	fmt.Println("part2:", count[least])
 }
 
-func popcount(n int) int {
+func sum(s []int) int {
 	out := 0
-	for n > 0 {
-		out += n & 1
-		n >>= 1
+	for _, x := range s {
+		out += x
 	}
 	return out
 }
