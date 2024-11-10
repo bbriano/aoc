@@ -2,92 +2,73 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"strings"
 )
 
 func main() {
-	f, err := os.Open("input")
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-	buf, err := io.ReadAll(f)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-	var part1, part2 [][]bool
-	for _, line := range strings.Split(string(buf), "\n") {
-		var row1, row2 []bool
+	input, _ := os.ReadFile("input")
+	var grid [][]bool
+	for _, line := range strings.Split(string(input), "\n") {
+		var row []bool
 		for _, c := range line {
-			switch c {
-			case '.':
-				row1 = append(row1, false)
-				row2 = append(row2, false)
-			case '#':
-				row1 = append(row1, true)
-				row2 = append(row2, true)
-			default:
-				panic("unhandled character")
-			}
+			row = append(row, c == '#')
 		}
-		part1 = append(part1, row1)
-		part2 = append(part2, row2)
+		grid = append(grid, row)
 	}
-	part2[0][0] = true
-	part2[0][len(part2[0])-1] = true
-	part2[len(part2)-1][0] = true
-	part2[len(part2)-1][len(part2[0])-1] = true
-	for i := 0; i < 100; i++ {
-		step(part1)
-		step(part2)
-		part2[0][0] = true
-		part2[0][len(part2[0])-1] = true
-		part2[len(part2)-1][0] = true
-		part2[len(part2)-1][len(part2[0])-1] = true
+	m, n := len(grid), len(grid[0])
+	tmp := make([][]bool, m)
+	grid2 := make([][]bool, m)
+	for i := range m {
+		tmp[i] = make([]bool, n)
+		grid2[i] = make([]bool, n)
+		copy(grid2[i], grid[i])
 	}
-	fmt.Println("part1:", count(part1))
-	fmt.Println("part2:", count(part2))
+	grid2[0][0], grid2[0][n-1] = true, true
+	grid2[m-1][0], grid2[m-1][n-1] = true, true
+	for range 100 {
+		conway(tmp, grid)
+		grid, tmp = tmp, grid
+		conway(tmp, grid2)
+		grid2, tmp = tmp, grid2
+		grid2[0][0], grid2[0][n-1] = true, true
+		grid2[m-1][0], grid2[m-1][n-1] = true, true
+	}
+	fmt.Println("part1:", count(grid))
+	fmt.Println("part2:", count(grid2))
 }
 
-func step(grid [][]bool) {
-	var off, on [][2]int
-	for i := range grid {
-		for j := range grid[i] {
-			nc := 0
-			neighbours := [][2]int{
-				{i - 1, j - 1},
-				{i - 1, j},
-				{i - 1, j + 1},
-				{i, j - 1},
-				{i, j + 1},
-				{i + 1, j - 1},
-				{i + 1, j},
-				{i + 1, j + 1},
-			}
-			for _, idx := range neighbours {
-				if idx[0] < 0 || idx[0] >= len(grid) ||
-					idx[1] < 0 || idx[1] >= len(grid[i]) {
-					continue
-				}
-				if grid[idx[0]][idx[1]] {
-					nc++
+func conway(dst, src [][]bool) {
+	m, n := len(src), len(src[0])
+	for i := range m {
+		for j := range n {
+			neighbours := 0
+			for p := max(0, i-1); p <= min(m-1, i+1); p++ {
+				for q := max(0, j-1); q <= min(n-1, j+1); q++ {
+					if p == i && q == j {
+						continue
+					}
+					if src[p][q] {
+						neighbours++
+					}
 				}
 			}
-			if grid[i][j] && nc != 2 && nc != 3 {
-				off = append(off, [2]int{i, j})
-			} else if !grid[i][j] && nc == 3 {
-				on = append(on, [2]int{i, j})
+			if src[i][j] {
+				switch neighbours {
+				case 2, 3:
+					dst[i][j] = true
+				default:
+					dst[i][j] = false
+				}
+			} else {
+				switch neighbours {
+				case 3:
+					dst[i][j] = true
+				default:
+					dst[i][j] = false
+				}
 			}
 		}
-	}
-	for _, idx := range off {
-		grid[idx[0]][idx[1]] = false
-	}
-	for _, idx := range on {
-		grid[idx[0]][idx[1]] = true
 	}
 }
 
