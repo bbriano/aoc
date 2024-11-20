@@ -61,9 +61,12 @@ func main() {
 	b := boss{71, 10}
 	minimize(p, b, make(effectMap), 0)
 	fmt.Println("part1:", mincost)
+	minimize2(p, b, make(effectMap), 0)
+	fmt.Println("part2:", mincost2)
 }
 
 var mincost = math.MaxInt
+var mincost2 = math.MaxInt
 
 func minimize(p player, b boss, effects effectMap, cost int) {
 	if cost >= mincost {
@@ -95,5 +98,42 @@ func minimize(p player, b boss, effects effectMap, cost int) {
 			continue
 		}
 		minimize(p, b, effects, cost+sp.mana)
+	}
+}
+
+func minimize2(p player, b boss, effects effectMap, cost int) {
+	if cost >= mincost2 {
+		return
+	}
+	// Player's turn
+	p.hp--
+	if p.hp <= 0 {
+		return
+	}
+	effects.apply(&p, &b)
+	for i, sp := range spells {
+		if p.mana < sp.mana {
+			continue
+		}
+		if _, ok := effects[i]; ok {
+			// Can't have multiple of the same effect active.
+			continue
+		}
+		// Copy state to not affect previous/next iteration.
+		p, b, effects := p, b, effects.clone()
+		p.mana -= sp.mana
+		sp.instant(&p, &b)
+		effects[i] = &sp.effect
+		// Boss's turn
+		effects.apply(&p, &b)
+		if b.hp <= 0 {
+			mincost2 = min(mincost2, cost+sp.mana)
+			continue
+		}
+		p.hp -= max(1, b.damage-p.armor)
+		if p.hp <= 0 {
+			continue
+		}
+		minimize2(p, b, effects, cost+sp.mana)
 	}
 }
